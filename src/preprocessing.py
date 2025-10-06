@@ -1,3 +1,6 @@
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+
 # FONCTION DATA ENGINEERING
 
 def data_engineering(donnees_features: pd.DataFrame):
@@ -51,5 +54,5 @@ def data_engineering(donnees_features: pd.DataFrame):
     donnees_features['a_quitte_l_entreprise'] = donnees_features['a_quitte_l_entreprise'].map({'Oui': 1, 'Non': 0})
 
     donnees_traitees = donnees_features.copy()
-    
+
     return donnees_traitees
