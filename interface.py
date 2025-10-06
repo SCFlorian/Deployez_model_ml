@@ -1,0 +1,177 @@
+import gradio as gr
+import pandas as pd
+import joblib
+
+# Import des fonctions du projet
+from src.preprocessing import data_engineering
+from src.scaling import data_scaling
+from src.prediction import predict
+
+# FONCTIONS DE TEST
+
+def test_feature_engineering():
+    """Test de la fonction de feature engineering seule."""
+    return "Endpoint 'Feature Engineering' : Fonction disponible et opérationnelle."
+
+
+def test_scaling():
+    """Test du scaler (charge le scaler et vérifie les colonnes)."""
+    try:
+        joblib.load("models/standard_scaler.pkl")
+        return "Endpoint 'Scaling' : Scaler chargé avec succès."
+    except Exception as e:
+        return f"Endpoint 'Scaling' : Erreur — {e}"
+
+
+def test_model():
+    """Test du chargement du modèle et du seuil."""
+    try:
+        joblib.load("models/final_model.pkl")
+        with open("models/threshold.txt", "r") as f:
+            threshold = float(f.read())
+        return f"Endpoint 'Model' : Modèle et seuil ({threshold:.3f}) chargés avec succès."
+    except Exception as e:
+        return f"Endpoint 'Model' : Erreur — {e}"
+
+# PIPELINE COMPLET
+
+def process_input(
+    age, genre, revenu_mensuel, statut_marital,
+    departement, poste, niveau_hierarchique_poste,
+    nombre_experiences_precedentes, annee_experience_totale,
+    annees_dans_l_entreprise, annees_dans_le_poste_actuel,
+    satisfaction_employee_environnement, note_evaluation_precedente,
+    satisfaction_employee_nature_travail, satisfaction_employee_equipe,
+    satisfaction_employee_equilibre_pro_perso, note_evaluation_actuelle,
+    heure_supplementaires, augmentation_salaire_precedente_pourcent,
+    nombre_participation_pee, nb_formations_suivies,
+    distance_domicile_travail, niveau_education,
+    domaine_etude, frequence_deplacement,
+    annees_depuis_la_derniere_promotion, annes_sous_responsable_actuel
+):
+    """Pipeline complet de la prédiction."""
+    try:
+        # Données brutes utilisateur
+        donnees_saisie = pd.DataFrame([{
+            "age": age,
+            "genre": genre,
+            "revenu_mensuel": revenu_mensuel,
+            "statut_marital": statut_marital,
+            "departement": departement,
+            "poste": poste,
+            "niveau_hierarchique_poste": niveau_hierarchique_poste,
+            "nombre_experiences_precedentes": nombre_experiences_precedentes,
+            "annee_experience_totale": annee_experience_totale,
+            "annees_dans_l_entreprise": annees_dans_l_entreprise,
+            "annees_dans_le_poste_actuel": annees_dans_le_poste_actuel,
+            "satisfaction_employee_environnement": satisfaction_employee_environnement,
+            "note_evaluation_precedente": note_evaluation_precedente,
+            "satisfaction_employee_nature_travail": satisfaction_employee_nature_travail,
+            "satisfaction_employee_equipe": satisfaction_employee_equipe,
+            "satisfaction_employee_equilibre_pro_perso": satisfaction_employee_equilibre_pro_perso,
+            "note_evaluation_actuelle": note_evaluation_actuelle,
+            "heure_supplementaires": heure_supplementaires,
+            "augmentation_salaire_precedente_pourcent": augmentation_salaire_precedente_pourcent,
+            "nombre_participation_pee": nombre_participation_pee,
+            "nb_formations_suivies": nb_formations_suivies,
+            "distance_domicile_travail": distance_domicile_travail,
+            "niveau_education": niveau_education,
+            "domaine_etude": domaine_etude,
+            "frequence_deplacement": frequence_deplacement,
+            "annees_depuis_la_derniere_promotion": annees_depuis_la_derniere_promotion,
+            "annes_sous_responsable_actuel": annes_sous_responsable_actuel,
+        }])
+
+        # Feature engineering
+        donnees_traitees = data_engineering(donnees_saisie)
+
+        # Scaling
+        donnees_pret = data_scaling(donnees_traitees)
+
+        # Prédiction
+        res = predict(donnees_pret)
+
+        message = "Risque de départ" if res["prediction"] == 1 else "Employé fidèle"
+        return f"{message} — probabilité : {res['probability']:.3f}"
+
+    except Exception as e:
+        return f"Erreur dans la prédiction : {e}"
+
+
+# INTERFACE GRADIO
+
+def build_interface():
+    """Construit l'interface Gradio avec 3 zones : tests + prédiction + résultat."""
+    # --- SECTION TEST DES ENDPOINTS ---
+    with gr.Blocks(title="Employee Turnover Prediction") as demo:
+        gr.Markdown("## Test des endpoints disponibles")
+
+        with gr.Row():
+            test_output1 = gr.Textbox(label="Résultat Feature Engineering")
+            gr.Button("Test Feature Engineering").click(fn=test_feature_engineering, outputs=test_output1)
+
+            test_output2 = gr.Textbox(label="Résultat Scaling")
+            gr.Button("Test Scaling").click(fn=test_scaling, outputs=test_output2)
+
+            test_output3 = gr.Textbox(label="Résultat Modèle")
+            gr.Button("Test Model").click(fn=test_model, outputs=test_output3)
+
+        gr.Markdown("---")
+
+        # --- SECTION FORMULAIRE DE PREDICTION ---
+        gr.Markdown("## Saisir les informations de l’employé")
+
+        with gr.Row():
+            age = gr.Number(label="Âge", minimum=18, maximum=65, step=1)
+            genre = gr.Radio(choices=["M", "F"], label="Genre")
+            revenu = gr.Number(label="Revenu mensuel (€)", minimum=1000, maximum=20000, step=100)
+
+        statut_marital = gr.Dropdown(["Celibataire", "Marie", "Divorce"], label="Statut marital")
+        departement = gr.Dropdown(["Commercial", "Consulting", "RessourcesHumaines"], label="Département")
+        poste = gr.Dropdown(["AssistantdeDirection","CadreCommercial","Consultant","DirecteurTechnique",
+                             "Manager","ReprésentantCommercial","RessourcesHumaines","SeniorManager","TechLead"], label="Poste")
+
+        niveau_hierarchique_poste = gr.Number(label="Niveau hiérarchique", minimum=1, maximum=5)
+        nombre_experiences_precedentes = gr.Number(label="Expériences précédentes", minimum=1, maximum=9)
+        annee_experience_totale = gr.Number(label="Années d'expérience totale", minimum=0, maximum=40)
+        annees_dans_l_entreprise = gr.Number(label="Années dans l’entreprise", minimum=0, maximum=40)
+        annees_dans_le_poste_actuel = gr.Number(label="Années dans le poste actuel", minimum=0, maximum=18)
+        annees_depuis_la_derniere_promotion = gr.Number(label="Années depuis la dernière promotion", minimum=0, maximum=15)
+        annes_sous_responsable_actuel = gr.Number(label="Années sous responsable actuel", minimum=0, maximum=17)
+
+        satisfaction_employee_environnement = gr.Slider(1, 4, step=1, label="Satisfaction environnement")
+        satisfaction_employee_nature_travail = gr.Slider(1, 4, step=1, label="Satisfaction nature du travail")
+        satisfaction_employee_equipe = gr.Slider(1, 4, step=1, label="Satisfaction équipe")
+        satisfaction_employee_equilibre_pro_perso = gr.Slider(1, 4, step=1, label="Satisfaction équilibre vie")
+        note_evaluation_precedente = gr.Slider(1, 4, step=1, label="Évaluation précédente")
+        note_evaluation_actuelle = gr.Slider(3, 4, step=1, label="Évaluation actuelle")
+
+        heure_supplementaires = gr.Radio(["Oui", "Non"], label="Heures supplémentaires")
+        augmentation_salaire_precedente_pourcent = gr.Dropdown(choices=["0.11", "0.12", "0.13", "0.14", "0.15", "0.16", "0.17","0.18", "0.19", "0.20", "0.21", "0.22", "0.23", "0.24", "0.25"],label="Augmentation du salaire précédente (%)")
+        nombre_participation_pee = gr.Number(label="Participations PEE", minimum=0, maximum=3, step=1)
+        nb_formations_suivies = gr.Number(label="Formations suivies", minimum=0, maximum=6, step=1)
+        distance_domicile_travail = gr.Number(label="Distance domicile-travail (km)", minimum=1, maximum=29, step=1)
+        niveau_education = gr.Slider(1, 5, step=1, label="Niveau d'éducation")
+        domaine_etude = gr.Dropdown(["Autre","Entrepreunariat","InfraCloud","Marketing","RessourcesHumaines","TransformationDigitale"], label="Domaine d’étude")
+        frequence_deplacement = gr.Dropdown(["Aucun", "Occasionnel", "Frequent"], label="Fréquence de déplacement")
+
+        predict_button = gr.Button("Lancer la prédiction")
+        output = gr.Textbox(label="Résultat de la prédiction")
+
+        predict_button.click(
+            fn=process_input,
+            inputs=[
+                age, genre, revenu, statut_marital, departement, poste, niveau_hierarchique_poste,
+                nombre_experiences_precedentes, annee_experience_totale, annees_dans_l_entreprise,
+                annees_dans_le_poste_actuel, satisfaction_employee_environnement,
+                note_evaluation_precedente, satisfaction_employee_nature_travail,
+                satisfaction_employee_equipe, satisfaction_employee_equilibre_pro_perso,
+                note_evaluation_actuelle, heure_supplementaires, augmentation_salaire_precedente_pourcent,
+                nombre_participation_pee, nb_formations_suivies, distance_domicile_travail,
+                niveau_education, domaine_etude, frequence_deplacement,
+                annees_depuis_la_derniere_promotion, annes_sous_responsable_actuel
+            ],
+            outputs=output
+        )
+
+    return demo
