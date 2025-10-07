@@ -8,9 +8,9 @@ import gradio as gr
 from src.preprocessing import data_engineering
 from src.scaling import data_scaling
 from src.prediction import predict
-from interface import build_interface, test_feature_engineering, test_scaling, test_model
+from interface import build_interface
 
-# Définition du modèle de validation Pydantic
+# Modèle de données Pydantic
 class EmployeeInput(BaseModel):
     age: int
     genre: str
@@ -40,24 +40,18 @@ class EmployeeInput(BaseModel):
     annees_depuis_la_derniere_promotion: int
     annes_sous_responsable_actuel: int
 
-# Création de l'application FastAPI
-app = FastAPI(
+# Application FastAPI
+fastapi_app = FastAPI(
     title="Employee Turnover Prediction API",
     description="API de prédiction du départ des employés basée sur un modèle de Machine Learning.",
     version="1.0.0"
 )
 
-# Endpoints de test
-@app.get("/health")
+@fastapi_app.get("/health")
 def health_check():
-    """Vérifie si l’API fonctionne correctement."""
     return {"status": "OK", "message": "API opérationnelle"}
 
-@app.get("/feature_engineering")
-def test_feature_engineering():
-    return {"message": "Feature engineering : opérationnel"}
-
-@app.get("/scaling")
+@fastapi_app.get("/scaling")
 def test_scaling():
     try:
         joblib.load("models/standard_scaler.pkl")
@@ -65,7 +59,7 @@ def test_scaling():
     except Exception as e:
         return {"error": str(e)}
 
-@app.get("/model")
+@fastapi_app.get("/model")
 def test_model():
     try:
         joblib.load("models/final_model.pkl")
@@ -75,40 +69,29 @@ def test_model():
     except Exception as e:
         return {"error": str(e)}
 
-# Endpoint principal de prédiction
-@app.post("/predict")
+@fastapi_app.post("/predict")
 def predict_api(input_data: EmployeeInput):
-    """
-    Endpoint principal : prend les données d’un employé,
-    applique le pipeline complet et renvoie la prédiction.
-    """
     try:
-        # Conversion des données validées en DataFrame
         donnees_saisie = pd.DataFrame([input_data.dict()])
-
-        # Feature engineering
         donnees_traitees = data_engineering(donnees_saisie)
-
-        # Scaling
         donnees_pret = data_scaling(donnees_traitees)
-
-        # Prédiction finale
         result = predict(donnees_pret)
-
         message = "Risque de départ" if result["prediction"] == 1 else "Employé fidèle"
-
         return {
             "prediction": int(result["prediction"]),
             "probability": float(result["probability"]),
             "message": message
         }
-
     except Exception as e:
         return {"error": str(e)}
 
-# Intégration de l’interface Gradio
+# Interface Gradio montée sur FastAPI
 app = gr.mount_gradio_app(
-    app,
+    fastapi_app,
     blocks=build_interface(),
     path="/"
 )
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=7860)
