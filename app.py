@@ -4,15 +4,14 @@ import pandas as pd
 import joblib
 import gradio as gr
 
-# Import des modules internes
+# Import des modules internes (pipeline ML)
 from src.preprocessing import data_engineering
 from src.scaling import data_scaling
 from src.prediction import predict
 from interface import build_interface
 
 
-# Partie API FastAPI
-
+# === Schéma de validation Pydantic ===
 class EmployeeInput(BaseModel):
     age: int
     genre: str
@@ -43,6 +42,7 @@ class EmployeeInput(BaseModel):
     annes_sous_responsable_actuel: int
 
 
+# === Création de l’app FastAPI ===
 fastapi_app = FastAPI(
     title="Employee Turnover Prediction API",
     description="API de prédiction du départ des employés basée sur un modèle de Machine Learning.",
@@ -50,31 +50,47 @@ fastapi_app = FastAPI(
 )
 
 
+# === Endpoint de santé ===
 @fastapi_app.get("/health")
 def health_check():
+    """Vérifie si l’API fonctionne correctement."""
     return {"status": "OK", "message": "API opérationnelle"}
 
 
+# === Endpoint de prédiction ===
 @fastapi_app.post("/predict")
 def predict_api(input_data: EmployeeInput):
+    """
+    Endpoint principal : exécute le pipeline complet
+    Feature engineering → Scaling → Prédiction
+    """
     try:
-        df = pd.DataFrame([input_data.dict()])
-        df = data_engineering(df)
-        df = data_scaling(df)
-        result = predict(df)
+        # Conversion en DataFrame
+        donnees_saisie = pd.DataFrame([input_data.dict()])
+
+        # Feature engineering
+        donnees_traitees = data_engineering(donnees_saisie)
+
+        # Scaling
+        donnees_pret = data_scaling(donnees_traitees)
+
+        # Prédiction finale
+        result = predict(donnees_pret)
+
         message = "Risque de départ" if result["prediction"] == 1 else "Employé fidèle"
+
         return {
             "prediction": int(result["prediction"]),
             "probability": float(result["probability"]),
             "message": message
         }
+
     except Exception as e:
         return {"error": str(e)}
 
 
-# Interface Gradio principale
+# === Interface Gradio (hébergée sur Hugging Face) ===
 demo = build_interface()
-
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860)
