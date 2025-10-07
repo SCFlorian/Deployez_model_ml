@@ -8,7 +8,7 @@ import gradio as gr
 from src.preprocessing import data_engineering
 from src.scaling import data_scaling
 from src.prediction import predict
-from interface import build_interface
+from interface import build_interface, test_feature_engineering, test_scaling, test_model
 
 # Définition du modèle de validation Pydantic
 class EmployeeInput(BaseModel):
