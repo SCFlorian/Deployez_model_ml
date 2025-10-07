@@ -90,62 +90,90 @@ def process_input(
 # INTERFACE GRADIO
 
 def build_interface():
-    """Construit l'interface Gradio avec 3 zones : tests + prédiction + résultat."""
-    # --- SECTION TEST DES ENDPOINTS ---
-    with gr.Blocks(title="Employee Turnover Prediction") as demo:
-        gr.Markdown("## Test des endpoints disponibles")
+    with gr.Blocks(
+        title="Employee Turnover Prediction",
+        theme=gr.themes.Soft(primary_hue="indigo", secondary_hue="purple")
+    ) as demo:
+        gr.Markdown("## 🧩 Test des endpoints disponibles")
 
         with gr.Row():
-            test_output1 = gr.Textbox(label="Résultat Feature Engineering")
-            gr.Button("Test Feature Engineering").click(fn=test_feature_engineering, outputs=test_output1)
+            with gr.Column():
+                test_output1 = gr.Textbox(label="Résultat Feature Engineering")
+                gr.Button("Tester Feature Engineering").click(fn=test_feature_engineering, outputs=test_output1)
 
-            test_output2 = gr.Textbox(label="Résultat Scaling")
-            gr.Button("Test Scaling").click(fn=test_scaling, outputs=test_output2)
+            with gr.Column():
+                test_output2 = gr.Textbox(label="Résultat Scaling")
+                gr.Button("Tester Scaling").click(fn=test_scaling, outputs=test_output2)
 
-            test_output3 = gr.Textbox(label="Résultat Modèle")
-            gr.Button("Test Model").click(fn=test_model, outputs=test_output3)
+            with gr.Column():
+                test_output3 = gr.Textbox(label="Résultat Modèle")
+                gr.Button("Tester Modèle").click(fn=test_model, outputs=test_output3)
 
         gr.Markdown("---")
-
-        # --- SECTION FORMULAIRE DE PREDICTION ---
-        gr.Markdown("## Saisir les informations de l’employé")
+        gr.Markdown("## 👤 Saisir les informations de l’employé")
 
         with gr.Row():
             age = gr.Number(label="Âge", minimum=18, maximum=60, step=1)
             genre = gr.Radio(choices=["M", "F"], label="Genre")
             revenu = gr.Number(label="Revenu mensuel (€)", minimum=1000, maximum=20000, step=100)
 
-        statut_marital = gr.Dropdown(["Celibataire", "Marie", "Divorce"], label="Statut marital")
-        departement = gr.Dropdown(["Commercial", "Consulting", "RessourcesHumaines"], label="Département")
-        poste = gr.Dropdown(["AssistantdeDirection","CadreCommercial","Consultant","DirecteurTechnique",
-                             "Manager","ReprésentantCommercial","RessourcesHumaines","SeniorManager","TechLead"], label="Poste")
+        with gr.Row():
+            statut_marital = gr.Dropdown(
+                ["Célibataire", "Marié", "Divorcé"],
+                label="Statut marital"
+            )
+            departement = gr.Dropdown(
+                ["Commercial", "Consulting", "Ressources Humaines"],
+                label="Département"
+            )
+            poste = gr.Dropdown(
+                [
+                    "Assistant de Direction","Cadre Commercial","Consultant",
+                    "Directeur Technique","Manager","Représentant Commercial",
+                    "Ressources Humaines","Senior Manager","Tech Lead"
+                ],
+                label="Poste"
+            )
 
-        niveau_hierarchique_poste = gr.Number(label="Niveau hiérarchique", minimum=1, maximum=5)
-        nombre_experiences_precedentes = gr.Number(label="Expériences précédentes", minimum=1, maximum=9)
-        annee_experience_totale = gr.Number(label="Années d'expérience totale", minimum=0, maximum=40)
-        annees_dans_l_entreprise = gr.Number(label="Années dans l’entreprise", minimum=0, maximum=40)
-        annees_dans_le_poste_actuel = gr.Number(label="Années dans le poste actuel", minimum=0, maximum=18)
-        annees_depuis_la_derniere_promotion = gr.Number(label="Années depuis la dernière promotion", minimum=0, maximum=15)
-        annes_sous_responsable_actuel = gr.Number(label="Années sous responsable actuel", minimum=0, maximum=17)
+        # Section expérience et satisfaction dans 2 colonnes
+        with gr.Row():
+            with gr.Column():
+                niveau_hierarchique_poste = gr.Number(label="Niveau hiérarchique", minimum=1, maximum=5)
+                nombre_experiences_precedentes = gr.Number(label="Expériences précédentes", minimum=1, maximum=9)
+                annee_experience_totale = gr.Number(label="Années d'expérience totale", minimum=0, maximum=40)
+                annees_dans_l_entreprise = gr.Number(label="Années dans l’entreprise", minimum=0, maximum=40)
+                annees_dans_le_poste_actuel = gr.Number(label="Années dans le poste actuel", minimum=0, maximum=18)
+                annees_depuis_la_derniere_promotion = gr.Number(label="Années depuis la dernière promotion", minimum=0, maximum=15)
+                annes_sous_responsable_actuel = gr.Number(label="Années sous responsable actuel", minimum=0, maximum=17)
 
-        satisfaction_employee_environnement = gr.Slider(1, 4, step=1, label="Satisfaction environnement")
-        satisfaction_employee_nature_travail = gr.Slider(1, 4, step=1, label="Satisfaction nature du travail")
-        satisfaction_employee_equipe = gr.Slider(1, 4, step=1, label="Satisfaction équipe")
-        satisfaction_employee_equilibre_pro_perso = gr.Slider(1, 4, step=1, label="Satisfaction équilibre vie")
-        note_evaluation_precedente = gr.Slider(1, 4, step=1, label="Évaluation précédente")
-        note_evaluation_actuelle = gr.Slider(3, 4, step=1, label="Évaluation actuelle")
+            with gr.Column():
+                satisfaction_employee_environnement = gr.Slider(1, 4, step=1, label="Satisfaction environnement")
+                satisfaction_employee_nature_travail = gr.Slider(1, 4, step=1, label="Satisfaction nature du travail")
+                satisfaction_employee_equipe = gr.Slider(1, 4, step=1, label="Satisfaction équipe")
+                satisfaction_employee_equilibre_pro_perso = gr.Slider(1, 4, step=1, label="Satisfaction équilibre vie")
+                note_evaluation_precedente = gr.Slider(1, 4, step=1, label="Évaluation précédente")
+                note_evaluation_actuelle = gr.Slider(3, 4, step=1, label="Évaluation actuelle")
 
-        heure_supplementaires = gr.Radio(["Oui", "Non"], label="Heures supplémentaires")
-        augmentation_salaire_precedente_pourcent = gr.Dropdown(choices=["0.11", "0.12", "0.13", "0.14", "0.15", "0.16", "0.17","0.18", "0.19", "0.20", "0.21", "0.22", "0.23", "0.24", "0.25"],label="Augmentation du salaire précédente (%)")
-        nombre_participation_pee = gr.Number(label="Participations PEE", minimum=0, maximum=3, step=1)
-        nb_formations_suivies = gr.Number(label="Formations suivies", minimum=0, maximum=6, step=1)
-        distance_domicile_travail = gr.Number(label="Distance domicile-travail (km)", minimum=1, maximum=29, step=1)
-        niveau_education = gr.Slider(1, 5, step=1, label="Niveau d'éducation")
-        domaine_etude = gr.Dropdown(["Autre","Entrepreunariat","InfraCloud","Marketing","RessourcesHumaines","TransformationDigitale"], label="Domaine d’étude")
-        frequence_deplacement = gr.Dropdown(["Aucun", "Occasionnel", "Frequent"], label="Fréquence de déplacement")
+        with gr.Row():
+            heure_supplementaires = gr.Radio(["Oui", "Non"], label="Heures supplémentaires")
+            augmentation_salaire_precedente_pourcent = gr.Dropdown(
+                [f"{i/100:.2f}" for i in range(11, 26)],
+                label="Augmentation du salaire précédente (%)"
+            )
+            nombre_participation_pee = gr.Number(label="Participations PEE", minimum=0, maximum=3, step=1)
+            nb_formations_suivies = gr.Number(label="Formations suivies", minimum=0, maximum=6, step=1)
+            distance_domicile_travail = gr.Number(label="Distance domicile-travail (km)", minimum=1, maximum=29, step=1)
 
-        predict_button = gr.Button("Lancer la prédiction")
-        output = gr.Textbox(label="Résultat de la prédiction")
+        with gr.Row():
+            niveau_education = gr.Slider(1, 5, step=1, label="Niveau d'éducation")
+            domaine_etude = gr.Dropdown(
+                ["Autre","Entrepreneuriat","InfraCloud","Marketing","Ressources Humaines","Transformation Digitale"],
+                label="Domaine d’étude"
+            )
+            frequence_deplacement = gr.Dropdown(["Aucun", "Occasionnel", "Fréquent"], label="Fréquence de déplacement")
+
+        predict_button = gr.Button("🚀 Lancer la prédiction")
+        output = gr.Textbox(label="Résultat de la prédiction", lines=2)
 
         predict_button.click(
             fn=process_input,
