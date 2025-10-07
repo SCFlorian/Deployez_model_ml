@@ -3,7 +3,7 @@ fastapi
 uvicorn
 
 # Machine Learning
-scikit-learn
+scikit-learn==1.7.1
 catboost
 joblib
 numpy
