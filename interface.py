@@ -37,17 +37,17 @@ def process_input(**kwargs):
 # --- Interface Gradio ---
 def build_interface():
     theme = gr.themes.Soft(
-    primary_hue="indigo",
-    secondary_hue="blue",
-    neutral_hue="gray"
-)
+        primary_hue="indigo",
+        secondary_hue="blue",
+        neutral_hue="gray"
+    )
 
-css = """
-.gradio-container {max-width: 1100px !important; margin: auto !important; background-color: #f8f9fb !important;}
-h1, h2, h3 {color: #1f2937 !important; font-weight: 700 !important;}
-.gr-box {border-radius: 12px !important; box-shadow: 0 3px 10px rgba(0,0,0,0.08) !important;}
-button {font-weight: 600 !important; border-radius: 8px !important;}
-"""
+    css = """
+    .gradio-container {max-width: 1100px !important; margin: auto !important; background-color: #f8f9fb !important;}
+    h1, h2, h3 {color: #1f2937 !important; font-weight: 700 !important;}
+    .gr-box {border-radius: 12px !important; box-shadow: 0 3px 10px rgba(0,0,0,0.08) !important;}
+    button {font-weight: 600 !important; border-radius: 8px !important;}
+    """
 
     with gr.Blocks(theme=theme, css=css, title="Déployez votre modèle RH") as demo:
         gr.Markdown(
