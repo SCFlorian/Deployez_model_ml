@@ -90,6 +90,7 @@ def process_input(
 # INTERFACE GRADIO
 
 def build_interface():
+    gr.close_all()
     with gr.Blocks(
         title="Employee Turnover Prediction",
         theme=gr.themes.Soft(primary_hue="indigo", secondary_hue="purple")
