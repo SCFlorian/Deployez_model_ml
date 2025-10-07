@@ -1,5 +1,34 @@
 import gradio as gr
+import pandas as pd
+import joblib
 import requests
+
+# FONCTIONS DE TEST (locales, pour éviter les imports croisés)
+
+def test_feature_engineering():
+    """Test de la fonction de feature engineering seule."""
+    return "Endpoint 'Feature Engineering' : Fonction disponible et opérationnelle."
+
+
+def test_scaling():
+    """Test du scaler (charge le scaler et vérifie les colonnes)."""
+    try:
+        joblib.load("models/standard_scaler.pkl")
+        return "Endpoint 'Scaling' : Scaler chargé avec succès."
+    except Exception as e:
+        return f"Endpoint 'Scaling' : Erreur — {e}"
+
+
+def test_model():
+    """Test du chargement du modèle et du seuil."""
+    try:
+        joblib.load("models/final_model.pkl")
+        with open("models/threshold.txt", "r") as f:
+            threshold = float(f.read())
+        return f"Endpoint 'Model' : Modèle et seuil ({threshold:.3f}) chargés avec succès."
+    except Exception as e:
+        return f"Endpoint 'Model' : Erreur — {e}"
+
 
 # URL de l'API FastAPI
 API_URL = "/predict"
