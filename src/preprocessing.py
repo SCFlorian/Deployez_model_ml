@@ -53,6 +53,9 @@ def data_engineering(donnees_features: pd.DataFrame):
 
     donnees_features['a_quitte_l_entreprise'] = donnees_features['a_quitte_l_entreprise'].map({'Oui': 1, 'Non': 0})
 
+    if "a_quitte_l_entreprise" in donnees_features.columns:
+        donnees_features['a_quitte_l_entreprise'] = donnees_features['a_quitte_l_entreprise'].map({'Oui': 1, 'Non': 0})
+
     donnees_traitees = donnees_features.copy()
 
     return donnees_traitees
