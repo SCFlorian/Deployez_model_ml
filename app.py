@@ -10,7 +10,9 @@ from src.scaling import data_scaling
 from src.prediction import predict
 from interface import build_interface
 
-# Modèle de données Pydantic
+
+# Partie API FastAPI
+
 class EmployeeInput(BaseModel):
     age: int
     genre: str
@@ -40,42 +42,26 @@ class EmployeeInput(BaseModel):
     annees_depuis_la_derniere_promotion: int
     annes_sous_responsable_actuel: int
 
-# Application FastAPI
+
 fastapi_app = FastAPI(
     title="Employee Turnover Prediction API",
     description="API de prédiction du départ des employés basée sur un modèle de Machine Learning.",
     version="1.0.0"
 )
 
+
 @fastapi_app.get("/health")
 def health_check():
     return {"status": "OK", "message": "API opérationnelle"}
 
-@fastapi_app.get("/scaling")
-def test_scaling():
-    try:
-        joblib.load("models/standard_scaler.pkl")
-        return {"message": "Scaler chargé avec succès"}
-    except Exception as e:
-        return {"error": str(e)}
-
-@fastapi_app.get("/model")
-def test_model():
-    try:
-        joblib.load("models/final_model.pkl")
-        with open("models/threshold.txt", "r") as f:
-            threshold = float(f.read())
-        return {"message": f"Modèle chargé avec succès — seuil {threshold:.3f}"}
-    except Exception as e:
-        return {"error": str(e)}
 
 @fastapi_app.post("/predict")
 def predict_api(input_data: EmployeeInput):
     try:
-        donnees_saisie = pd.DataFrame([input_data.dict()])
-        donnees_traitees = data_engineering(donnees_saisie)
-        donnees_pret = data_scaling(donnees_traitees)
-        result = predict(donnees_pret)
+        df = pd.DataFrame([input_data.dict()])
+        df = data_engineering(df)
+        df = data_scaling(df)
+        result = predict(df)
         message = "Risque de départ" if result["prediction"] == 1 else "Employé fidèle"
         return {
             "prediction": int(result["prediction"]),
@@ -85,13 +71,10 @@ def predict_api(input_data: EmployeeInput):
     except Exception as e:
         return {"error": str(e)}
 
-# Interface Gradio montée sur FastAPI
-app = gr.mount_gradio_app(
-    fastapi_app,
-    blocks=build_interface(),
-    path="/"
-)
+
+# Interface Gradio principale
+demo = build_interface()
+
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=7860)
+    demo.launch(server_name="0.0.0.0", server_port=7860)
