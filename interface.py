@@ -27,10 +27,11 @@ def test_model():
     except Exception as e:
         return f"Endpoint 'Model' : Erreur — {e}"
 
-# URL de l'API FastAPI
+
+# CONFIG
 API_URL = "/predict"
 
-# PROCESS
+# PROCESS DE PRÉDICTION
 
 def process_input(
     age, genre, revenu_mensuel, statut_marital,
@@ -46,9 +47,7 @@ def process_input(
     domaine_etude, frequence_deplacement,
     annees_depuis_la_derniere_promotion, annes_sous_responsable_actuel
 ):
-    """
-    Envoie les données saisies à l'API FastAPI pour prédiction.
-    """
+    """Envoie les données saisies à l'API FastAPI pour prédiction."""
     input_data = {
         "age": age,
         "genre": genre,
@@ -87,31 +86,79 @@ def process_input(
     except Exception as e:
         return f"Erreur : {e}"
 
-# INTERFACE GRADIO
 
+# INTERFACE GRADIO
 def build_interface():
     gr.close_all()
+
+    css_style = """
+    * { font-family: 'Inter', sans-serif !important; }
+    body { background-color: #f8f9fb !important; }
+    h1, h2, h3 { color: #2b2d42 !important; font-weight: 700 !important; }
+    label { color: #1a1b1f !important; font-weight: 500; }
+    select {
+        appearance: auto !important;
+        -webkit-appearance: menulist !important;
+        font-size: 14px !important;
+        height: 2.3em !important;
+        padding: 0.3em !important;
+        border-radius: 6px !important;
+    }
+    button {
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        height: 2.6em !important;
+        background-color: #4f46e5 !important;
+        color: white !important;
+    }
+    button:hover {
+        background-color: #4338ca !important;
+    }
+    .gradio-container {
+        max-width: 1100px !important;
+        margin: auto !important;
+    }
+    """
+
     with gr.Blocks(
-        title="Employee Turnover Prediction",
-        theme=gr.themes.Soft(primary_hue="indigo", secondary_hue="purple")
+        title="Déployez votre Modèle RH - Prédiction de Départ",
+        theme=gr.themes.Soft(primary_hue="indigo", secondary_hue="violet"),
+        css=css_style,
     ) as demo:
-        gr.Markdown("## 🧩 Test des endpoints disponibles")
+
+        # ====== EN-TÊTE ======
+        gr.Markdown(
+            """
+            <div style='text-align: center; margin-bottom: 30px;'>
+                <h1> Déployez votre modèle de <span style='color:#4f46e5;'>Machine Learning RH</span></h1>
+                <p style='font-size:16px;color:#555;'>Prédisez le risque de départ d’un employé à partir de ses caractéristiques.</p>
+            </div>
+            """
+        )
+
+        # ====== TEST DES ENDPOINTS ======
+        gr.Markdown("## Test des endpoints disponibles")
 
         with gr.Row():
             with gr.Column():
                 test_output1 = gr.Textbox(label="Résultat Feature Engineering")
-                gr.Button("Tester Feature Engineering").click(fn=test_feature_engineering, outputs=test_output1)
+                btn1 = gr.Button("Tester Feature Engineering")
+                btn1.click(fn=test_feature_engineering, outputs=test_output1)
 
             with gr.Column():
                 test_output2 = gr.Textbox(label="Résultat Scaling")
-                gr.Button("Tester Scaling").click(fn=test_scaling, outputs=test_output2)
+                btn2 = gr.Button("Tester Scaling")
+                btn2.click(fn=test_scaling, outputs=test_output2)
 
             with gr.Column():
                 test_output3 = gr.Textbox(label="Résultat Modèle")
-                gr.Button("Tester Modèle").click(fn=test_model, outputs=test_output3)
+                btn3 = gr.Button("Tester Modèle")
+                btn3.click(fn=test_model, outputs=test_output3)
 
         gr.Markdown("---")
-        gr.Markdown("## 👤 Saisir les informations de l’employé")
+
+        # ====== FORMULAIRE ======
+        gr.Markdown("## Saisir les informations de l’employé")
 
         with gr.Row():
             age = gr.Number(label="Âge", minimum=18, maximum=60, step=1)
@@ -119,24 +166,17 @@ def build_interface():
             revenu = gr.Number(label="Revenu mensuel (€)", minimum=1000, maximum=20000, step=100)
 
         with gr.Row():
-            statut_marital = gr.Dropdown(
-                ["Célibataire", "Marié", "Divorcé"],
-                label="Statut marital"
-            )
-            departement = gr.Dropdown(
-                ["Commercial", "Consulting", "Ressources Humaines"],
-                label="Département"
-            )
+            statut_marital = gr.Dropdown(["Célibataire", "Marié", "Divorcé"], label="Statut marital")
+            departement = gr.Dropdown(["Commercial", "Consulting", "Ressources Humaines"], label="Département")
             poste = gr.Dropdown(
                 [
-                    "Assistant de Direction","Cadre Commercial","Consultant",
-                    "Directeur Technique","Manager","Représentant Commercial",
-                    "Ressources Humaines","Senior Manager","Tech Lead"
+                    "Assistant de Direction", "Cadre Commercial", "Consultant",
+                    "Directeur Technique", "Manager", "Représentant Commercial",
+                    "Ressources Humaines", "Senior Manager", "Tech Lead"
                 ],
                 label="Poste"
             )
 
-        # Section expérience et satisfaction dans 2 colonnes
         with gr.Row():
             with gr.Column():
                 niveau_hierarchique_poste = gr.Number(label="Niveau hiérarchique", minimum=1, maximum=5)
@@ -151,30 +191,30 @@ def build_interface():
                 satisfaction_employee_environnement = gr.Slider(1, 4, step=1, label="Satisfaction environnement")
                 satisfaction_employee_nature_travail = gr.Slider(1, 4, step=1, label="Satisfaction nature du travail")
                 satisfaction_employee_equipe = gr.Slider(1, 4, step=1, label="Satisfaction équipe")
-                satisfaction_employee_equilibre_pro_perso = gr.Slider(1, 4, step=1, label="Satisfaction équilibre vie")
+                satisfaction_employee_equilibre_pro_perso = gr.Slider(1, 4, step=1, label="Équilibre pro/perso")
                 note_evaluation_precedente = gr.Slider(1, 4, step=1, label="Évaluation précédente")
                 note_evaluation_actuelle = gr.Slider(3, 4, step=1, label="Évaluation actuelle")
 
         with gr.Row():
             heure_supplementaires = gr.Radio(["Oui", "Non"], label="Heures supplémentaires")
             augmentation_salaire_precedente_pourcent = gr.Dropdown(
-                [f"{i/100:.2f}" for i in range(11, 26)],
-                label="Augmentation du salaire précédente (%)"
+                [f"{i/100:.2f}" for i in range(11, 26)], label="Augmentation du salaire précédente (%)"
             )
-            nombre_participation_pee = gr.Number(label="Participations PEE", minimum=0, maximum=3, step=1)
-            nb_formations_suivies = gr.Number(label="Formations suivies", minimum=0, maximum=6, step=1)
-            distance_domicile_travail = gr.Number(label="Distance domicile-travail (km)", minimum=1, maximum=29, step=1)
+            nombre_participation_pee = gr.Number(label="Participations PEE", minimum=0, maximum=3)
+            nb_formations_suivies = gr.Number(label="Formations suivies", minimum=0, maximum=6)
+            distance_domicile_travail = gr.Number(label="Distance domicile-travail (km)", minimum=1, maximum=29)
 
         with gr.Row():
             niveau_education = gr.Slider(1, 5, step=1, label="Niveau d'éducation")
             domaine_etude = gr.Dropdown(
-                ["Autre","Entrepreneuriat","InfraCloud","Marketing","Ressources Humaines","Transformation Digitale"],
+                ["Autre", "Entrepreneuriat", "InfraCloud", "Marketing", "Ressources Humaines", "Transformation Digitale"],
                 label="Domaine d’étude"
             )
             frequence_deplacement = gr.Dropdown(["Aucun", "Occasionnel", "Fréquent"], label="Fréquence de déplacement")
 
-        predict_button = gr.Button("🚀 Lancer la prédiction")
-        output = gr.Textbox(label="Résultat de la prédiction", lines=2)
+        gr.Markdown("---")
+        predict_button = gr.Button("Lancer la prédiction")
+        output = gr.Textbox(label="Résultat de la prédiction", lines=3)
 
         predict_button.click(
             fn=process_input,
