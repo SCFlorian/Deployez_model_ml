@@ -2,7 +2,7 @@ import gradio as gr
 import pandas as pd
 import joblib
 import requests
-import oss
+import os
 
 # Fonctions de test
 
