@@ -31,8 +31,7 @@ def test_model():
 # Connexion à l’API FastAPI
 
 SPACE_URL = os.getenv("SPACE_URL", "").strip().replace("_", "-").lower().rstrip("/")
-API_URL = f"{SPACE_URL}/predict" if SPACE_URL else "http://localhost:7860/predict"
-
+API_URL = f"{SPACE_URL}/api/predict" if SPACE_URL else "http://localhost:7860/api/predict"
 # Fonction de prédiction
 
 def process_input(
