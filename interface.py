@@ -1,7 +1,7 @@
-import gradio as gr
-import pandas as pd
 import joblib
 import requests
+import pandas as pd
+import gradio as gr
 
 # FONCTIONS DE TEST (locales, pour éviter les imports croisés)
 
