@@ -83,10 +83,21 @@ def process_input(
         response = requests.post(API_URL, json=input_data)
         response.raise_for_status()
         data = response.json()
-        return f"{data['message']} — probabilité : {data['probability']:.3f}"
+
+        # Si le backend renvoie le message attendu
+        if "message" in data and "probability" in data:
+            return f"{data['message']} — probabilité : {data['probability']:.3f}"
+
+        # Si le backend renvoie une erreur
+        elif "error" in data:
+            return f"Erreur API : {data['error']}"
+
+        # Si la réponse est inattendue
+        else:
+            return f"Réponse inattendue du serveur : {data}"
+
     except Exception as e:
         return f"Erreur : {e}"
-
 # Interface Gradio
 
 def build_interface():
@@ -121,7 +132,7 @@ def build_interface():
         with gr.Row():
             age = gr.Number(label="Âge", minimum=18, maximum=60, step=1)
             genre = gr.Radio(choices=["M", "F"], label="Genre")
-            revenu = gr.Number(label="Revenu mensuel (€)", minimum=1000, maximum=20000, step=100)
+            revenu = gr.Number(label="Revenu mensuel (€)", minimum=1000, maximum=20000)
 
         statut_marital = gr.Dropdown(["Celibataire", "Marie", "Divorce"], label="Statut marital")
         departement = gr.Dropdown(["Commercial", "Consulting", "RessourcesHumaines"], label="Département")
