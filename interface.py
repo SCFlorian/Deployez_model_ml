@@ -2,6 +2,7 @@ import gradio as gr
 import pandas as pd
 import joblib
 import requests
+import oss
 
 # Fonctions de test
 
@@ -29,7 +30,8 @@ def test_model():
 
 # Connexion à l’API FastAPI
 
-API_URL = "/predict"
+SPACE_URL = os.getenv("SPACE_URL", "").rstrip("/")
+API_URL = f"{SPACE_URL}/predict" if SPACE_URL else "http://localhost:7860/predict"
 
 # Fonction de prédiction
 
