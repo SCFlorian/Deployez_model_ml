@@ -51,32 +51,24 @@ fastapi_app = FastAPI(
 
 
 # === Endpoint de santé ===
-@fastapi_app.get("/health")
+@fastapi_app.get("/api/health")
 def health_check():
     """Vérifie si l’API fonctionne correctement."""
     return {"status": "OK", "message": "API opérationnelle"}
 
 
 # === Endpoint de prédiction ===
-@fastapi_app.post("/predict")
+@fastapi_app.post("/api/predict")
 def predict_api(input_data: EmployeeInput):
     """
     Endpoint principal : exécute le pipeline complet
     Feature engineering → Scaling → Prédiction
     """
     try:
-        # Conversion en DataFrame
         donnees_saisie = pd.DataFrame([input_data.dict()])
-
-        # Feature engineering
         donnees_traitees = data_engineering(donnees_saisie)
-
-        # Scaling
         donnees_pret = data_scaling(donnees_traitees)
-
-        # Prédiction finale
         result = predict(donnees_pret)
-
         message = "Risque de départ" if result["prediction"] == 1 else "Employé fidèle"
 
         return {
@@ -89,8 +81,13 @@ def predict_api(input_data: EmployeeInput):
         return {"error": str(e)}
 
 
-# === Interface Gradio (hébergée sur Hugging Face) ===
-demo = build_interface()
+# === Intégration Gradio sur FastAPI ===
+app = gr.mount_gradio_app(
+    fastapi_app,
+    blocks=build_interface(),
+    path="/"   # Gradio à la racine, FastAPI sous /api
+)
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=7860)
