@@ -9,7 +9,7 @@ joblib
 numpy
 pandas
 scipy
-gradio
+gradio>=5.52.0
 
 # Base de données
 sqlalchemy
