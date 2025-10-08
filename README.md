@@ -3,7 +3,7 @@ title: Deployez Modele ML
 emoji: 📊
 colorFrom: blue
 colorTo: purple
-sdk: docker
+sdk: gradio
 app_file: app.py
 pinned: false
 ---
