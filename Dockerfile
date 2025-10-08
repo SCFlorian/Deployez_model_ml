@@ -13,5 +13,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Étape 5 : Exposer le port utilisé par Gradio
 EXPOSE 7860
 
-# Étape 6 : Lancer ton application
+# Étape 6 : Lancer l'application
 CMD ["python", "app.py"]
