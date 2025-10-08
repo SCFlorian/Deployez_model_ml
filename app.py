@@ -3,9 +3,8 @@ from pydantic import BaseModel
 import pandas as pd
 import joblib
 import gradio as gr
-from spaces import Spaces
 
-# Import des modules internes (pipeline ML)
+# Import des modules internes
 from src.preprocessing import data_engineering
 from src.scaling import data_scaling
 from src.prediction import predict
@@ -52,14 +51,14 @@ fastapi_app = FastAPI(
 
 
 # === Endpoint de santé ===
-@fastapi_app.get("/api/health")
+@fastapi_app.get("/health")
 def health_check():
     """Vérifie si l’API fonctionne correctement."""
     return {"status": "OK", "message": "API opérationnelle"}
 
 
 # === Endpoint de prédiction ===
-@fastapi_app.post("/api/predict")
+@fastapi_app.post("/predict")
 def predict_api(input_data: EmployeeInput):
     """
     Endpoint principal : exécute le pipeline complet
@@ -70,8 +69,8 @@ def predict_api(input_data: EmployeeInput):
         donnees_traitees = data_engineering(donnees_saisie)
         donnees_pret = data_scaling(donnees_traitees)
         result = predict(donnees_pret)
-        message = "Risque de départ" if result["prediction"] == 1 else "Employé fidèle"
 
+        message = "Risque de départ" if result["prediction"] == 1 else "Employé fidèle"
         return {
             "prediction": int(result["prediction"]),
             "probability": float(result["probability"]),
@@ -82,10 +81,13 @@ def predict_api(input_data: EmployeeInput):
         return {"error": str(e)}
 
 
-# === Montage Gradio sur FastAPI ===
-interface = build_interface()
-app = gr.mount_gradio_app(fastapi_app, interface, path="/")
+# === Interface Gradio montée sur FastAPI ===
+app = gr.mount_gradio_app(
+    fastapi_app,
+    blocks=build_interface(),
+    path="/"
+)
 
-# === Utilisation du SDK "spaces" pour Hugging Face ===
-# Cela remplace uvicorn.run() et permet de fusionner FastAPI + Gradio proprement
-Spaces(app=app).launch()
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=7860)
