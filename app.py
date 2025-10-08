@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import pandas as pd
 import joblib
 import gradio as gr
+from spaces import Spaces
 
 # Import des modules internes (pipeline ML)
 from src.preprocessing import data_engineering
