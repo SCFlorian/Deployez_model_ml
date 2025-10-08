@@ -30,16 +30,20 @@ def test_model():
 
 # Connexion à l’API FastAPI
 
-# Détection automatique selon l'environnement
-SPACE_URL = os.getenv("SPACE_URL", "").strip().replace("_", "-").lower().rstrip("/")
+def get_api_url():
+    # Récupère la variable d'environnement Hugging Face si elle existe
+    space_id = os.getenv("SPACE_ID")
+    if space_id:
+        # Exemple : "FlorianSC/Deployez_model_ml" → converti en URL de l’espace
+        user, repo = space_id.split("/")
+        base_url = f"https://{user.lower()}-{repo.lower().replace('_', '-')}.hf.space"
+        return f"{base_url}/predict"
+    else:
+        # Si tu es en local
+        return "http://localhost:7860/predict"
 
-# Si on est sur Hugging Face, on appelle directement le backend interne
-if SPACE_URL:
-    API_URL = "/predict"
-else:
-    # En local
-    API_URL = "http://localhost:7860/predict"
-    
+API_URL = get_api_url()
+
 # Fonction de prédiction
 
 def process_input(

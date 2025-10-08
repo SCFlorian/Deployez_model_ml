@@ -81,13 +81,10 @@ def predict_api(input_data: EmployeeInput):
         return {"error": str(e)}
 
 
-# === Intégration Gradio sur FastAPI ===
-app = gr.mount_gradio_app(
-    fastapi_app,
-    blocks=build_interface(),
-    path="/"   # Gradio à la racine, FastAPI sous /api
-)
+# === Montage Gradio sur FastAPI ===
+interface = build_interface()
+app = gr.mount_gradio_app(fastapi_app, interface, path="/")
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=7860)
+# === Utilisation du SDK "spaces" pour Hugging Face ===
+# Cela remplace uvicorn.run() et permet de fusionner FastAPI + Gradio proprement
+Spaces(app=app).launch()
