@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import pandas as pd
 import joblib
 import gradio as gr
+import uvicorn
 
 # Import des modules internes
 from src.preprocessing import data_engineering
@@ -80,9 +81,12 @@ def predict_api(input_data: EmployeeInput):
     except Exception as e:
         return {"error": str(e)}
 
-app = gr.mount_gradio_app(
-    fastapi_app,
-    blocks=build_interface(),
-    path="/"
-)
-app.launch(server_name="0.0.0.0", server_port=7860)
+# === Interface Gradio (UI) ===
+demo = build_interface()
+
+# === Montage de Gradio sur FastAPI ===
+gradio_app = gr.mount_gradio_app(app, demo, path="/")
+
+# === Lancement pour Docker ===
+if __name__ == "__main__":
+    uvicorn.run("app:gradio_app", host="0.0.0.0", port=7860)
