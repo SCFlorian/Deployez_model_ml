@@ -5,9 +5,16 @@ import requests
 import os
 
 # Fonctions de test
-def test_feature_engineering():
-    """Test de la fonction de feature engineering seule."""
-    return "Endpoint 'Feature Engineering' : Fonction disponible et opérationnelle."
+def test_api_health():
+    """Teste si l’API FastAPI répond via le endpoint /health."""
+    try:
+        response = requests.get(f"{API_URL.replace('/predict', '')}/health")
+        if response.status_code == 200:
+            return f"API opérationnelle : {response.json().get('message', '')}"
+        else:
+            return f"API non disponible — Code {response.status_code}"
+    except Exception as e:
+        return f"Erreur de connexion à l’API — {e}"
 
 def test_scaling():
     """Test du scaler (charge le scaler et vérifie les colonnes)."""
@@ -105,8 +112,8 @@ def build_interface():
 
         # Section test des endpoints
         with gr.Row():
-            test_output1 = gr.Textbox(label="Résultat Feature Engineering", interactive=False)
-            gr.Button("Tester Feature Engineering").click(fn=test_feature_engineering, outputs=test_output1)
+            test_output1 = gr.Textbox(label="Statut de l’API (Health Check)", interactive=False)
+            gr.Button("Tester l’API").click(fn=test_api_health, outputs=test_output1)
             test_output2 = gr.Textbox(label="Résultat Scaling", interactive=False)
             gr.Button("Tester Scaling").click(fn=test_scaling, outputs=test_output2)
             test_output3 = gr.Textbox(label="Résultat Modèle", interactive=False)
