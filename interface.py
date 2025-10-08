@@ -30,8 +30,16 @@ def test_model():
 
 # Connexion à l’API FastAPI
 
+# Détection automatique selon l'environnement
 SPACE_URL = os.getenv("SPACE_URL", "").strip().replace("_", "-").lower().rstrip("/")
-API_URL = f"{SPACE_URL}/api/predict" if SPACE_URL else "http://localhost:7860/api/predict"
+
+# Si on est sur Hugging Face, on appelle directement le backend interne
+if SPACE_URL:
+    API_URL = "/predict"
+else:
+    # En local
+    API_URL = "http://localhost:7860/predict"
+    
 # Fonction de prédiction
 
 def process_input(
