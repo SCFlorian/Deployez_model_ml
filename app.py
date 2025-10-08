@@ -44,7 +44,7 @@ class EmployeeInput(BaseModel):
 
 
 # === Création de l’app FastAPI ===
-fastapi_app = FastAPI(
+app = FastAPI(
     title="Employee Turnover Prediction API",
     description="API de prédiction du départ des employés basée sur un modèle de Machine Learning.",
     version="1.0.0"
@@ -52,14 +52,14 @@ fastapi_app = FastAPI(
 
 
 # === Endpoint de santé ===
-@fastapi_app.get("/health")
+@app.get("/health")
 def health_check():
     """Vérifie si l’API fonctionne correctement."""
     return {"status": "OK", "message": "API opérationnelle"}
 
 
 # === Endpoint de prédiction ===
-@fastapi_app.post("/predict")
+@app.post("/predict")
 def predict_api(input_data: EmployeeInput):
     """
     Endpoint principal : exécute le pipeline complet
