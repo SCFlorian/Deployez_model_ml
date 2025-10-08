@@ -10,7 +10,8 @@ from src.preprocessing import data_engineering
 from src.scaling import data_scaling
 from src.prediction import predict
 from src.interface import build_interface
-
+from sqlalchemy.orm import Session
+from database.create_db import SessionLocal, EmployeeInputDB, PredictionResultDB
 
 # === Schéma de validation Pydantic ===
 class EmployeeInput(BaseModel):
@@ -64,14 +65,38 @@ def predict_api(input_data: EmployeeInput):
     """
     Endpoint principal : exécute le pipeline complet
     Feature engineering → Scaling → Prédiction
+    Sauvegarde le résultat de prédiction
     """
     try:
+        # Connexion à la BDD
+        db: Session = SessionLocal()
+
+        # Sauvegarde des entrées
+        new_input = EmployeeInputDB(**input_data.dict())
+        db.add(new_input)
+        db.commit()
+        db.refresh(new_input)
+
+        # Traitement ML
         donnees_saisie = pd.DataFrame([input_data.dict()])
         donnees_traitees = data_engineering(donnees_saisie)
         donnees_pret = data_scaling(donnees_traitees)
         result = predict(donnees_pret)
 
         message = "Risque de départ" if result["prediction"] == 1 else "Employé fidèle"
+
+        # Sauvegarde des résultats
+        new_result = PredictionResultDB(
+            employee_input_id=new_input.id,
+            prediction=result["prediction"],
+            probability=result["probability"],
+            message=message,
+        )
+        db.add(new_result)
+        db.commit()
+
+        db.close()
+
         return {
             "prediction": int(result["prediction"]),
             "probability": float(result["probability"]),
