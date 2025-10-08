@@ -78,24 +78,20 @@ def process_input(
     }
 
     try:
-    response = requests.post(API_URL, json=input_data)
-    response.raise_for_status()
-    data = response.json()
-
-    # Si l'API renvoie une erreur interne
-    if "error" in data:
-        return f"Erreur API : {data['error']}"
-
-    # Si tout s'est bien passé
-    elif "message" in data and "probability" in data:
-        return f"{data['message']} — probabilité : {data['probability']:.3f}"
-
-    # Si réponse inattendue
-    else:
-        return f"Réponse inattendue du serveur : {data}"
-
-except Exception as e:
-    return f"Erreur : {e}"
+        response = requests.post(API_URL, json=input_data)
+        response.raise_for_status()
+        data = response.json()
+        if "error" in data:
+            return f"Erreur API : {data['error']}"
+            
+        elif "message" in data and "probability" in data:
+            return f"{data['message']} — probabilité : {data['probability']:.3f}"
+        
+        else:
+            return f"Réponse inattendue du serveur : {data}"
+    
+    except Exception as e:
+        return f"Erreur : {e}"
 
 # Interface Gradio
 def build_interface():
