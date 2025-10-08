@@ -1,24 +1,28 @@
 import joblib
+import pandas as pd
 from src.utils import scaler_ou_non
 
 def data_scaling(donnees_traitees):
     """
-    Applique le scaler sauvegardé sur les colonnes numériques.
+    Applique le scaler sauvegardé sur les colonnes numériques,
+    et aligne les colonnes du DataFrame sur celles attendues par le modèle.
     """
-    # Supprimer la colonne cible si elle existe
-    if "a_quitte_l_entreprise" in donnees_traitees.columns:
-        donnees_traitees = donnees_traitees.drop(columns=["a_quitte_l_entreprise"])
-
     # Charger le scaler sauvegardé
     scaler = joblib.load("models/standard_scaler.pkl")
 
-    # Récupérer les colonnes à scaler
-    features_a_scaler, _ = scaler_ou_non()
+    # Récupérer les colonnes attendues
+    features_a_scaler, features_encodees = scaler_ou_non()
+    colonnes_attendues = features_a_scaler + features_encodees
 
-    # Vérification des colonnes présentes
-    features_a_scaler = [col for col in features_a_scaler if col in donnees_traitees.columns]
+    # Vérifie et ajoute les colonnes manquantes
+    for col in colonnes_attendues:
+        if col not in donnees_traitees.columns:
+            donnees_traitees[col] = 0
 
-    # Appliquer le scaling
+    # Réordonne les colonnes dans le même ordre que lors de l'entraînement
+    donnees_traitees = donnees_traitees[colonnes_attendues]
+
+    # Appliquer le scaling sur les colonnes numériques uniquement
     donnees_traitees[features_a_scaler] = scaler.transform(donnees_traitees[features_a_scaler])
 
     return donnees_traitees
