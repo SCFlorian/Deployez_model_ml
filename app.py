@@ -9,7 +9,7 @@ import uvicorn
 from src.preprocessing import data_engineering
 from src.scaling import data_scaling
 from src.prediction import predict
-from interface import build_interface
+from src.interface import build_interface
 
 
 # === Schéma de validation Pydantic ===
