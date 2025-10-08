@@ -5,7 +5,6 @@ import requests
 import os
 
 # Fonctions de test
-
 def test_feature_engineering():
     """Test de la fonction de feature engineering seule."""
     return "Endpoint 'Feature Engineering' : Fonction disponible et opérationnelle."
@@ -28,24 +27,13 @@ def test_model():
     except Exception as e:
         return f"Endpoint 'Model' : Erreur — {e}"
 
-# Connexion à l’API FastAPI
 
-def get_api_url():
-    # Récupère la variable d'environnement Hugging Face si elle existe
-    space_id = os.getenv("SPACE_ID")
-    if space_id:
-        # Exemple : "FlorianSC/Deployez_model_ml" → converti en URL de l’espace
-        user, repo = space_id.split("/")
-        base_url = f"https://{user.lower()}-{repo.lower().replace('_', '-')}.hf.space"
-        return f"{base_url}/predict"
-    else:
-        # Si tu es en local
-        return "http://localhost:7860/predict"
+# URL de l’API FastAPI (espace Hugging Face)
+SPACE_URL = os.getenv("SPACE_URL", "").strip().replace("_", "-").lower().rstrip("/")
+API_URL = f"{SPACE_URL}/predict" if SPACE_URL else "http://localhost:7860/predict"
 
-API_URL = get_api_url()
 
-# Fonction de prédiction
-
+# Fonction principale de prédiction
 def process_input(
     age, genre, revenu_mensuel, statut_marital,
     departement, poste, niveau_hierarchique_poste,
@@ -95,32 +83,17 @@ def process_input(
         response = requests.post(API_URL, json=input_data)
         response.raise_for_status()
         data = response.json()
-
-        # Si le backend renvoie le message attendu
-        if "message" in data and "probability" in data:
-            return f"{data['message']} — probabilité : {data['probability']:.3f}"
-
-        # Si le backend renvoie une erreur
-        elif "error" in data:
-            return f"Erreur API : {data['error']}"
-
-        # Si la réponse est inattendue
-        else:
-            return f"Réponse inattendue du serveur : {data}"
-
+        return f"{data['message']} — probabilité : {data['probability']:.3f}"
     except Exception as e:
         return f"Erreur : {e}"
-# Interface Gradio
 
+
+# Interface Gradio
 def build_interface():
     """Construit l'interface Gradio."""
     with gr.Blocks(
         title="Employee Turnover Prediction",
-        theme=gr.themes.Soft(
-            primary_hue="indigo",
-            secondary_hue="gray",
-            neutral_hue="gray"
-        )
+        theme=gr.themes.Soft(primary_hue="indigo", secondary_hue="gray", neutral_hue="gray")
     ) as demo:
         gr.Markdown("# Prédiction du Départ des Employés")
         gr.Markdown("### Vérifiez les endpoints puis effectuez une prédiction complète.")
@@ -129,22 +102,20 @@ def build_interface():
         with gr.Row():
             test_output1 = gr.Textbox(label="Résultat Feature Engineering", interactive=False)
             gr.Button("Tester Feature Engineering").click(fn=test_feature_engineering, outputs=test_output1)
-
             test_output2 = gr.Textbox(label="Résultat Scaling", interactive=False)
             gr.Button("Tester Scaling").click(fn=test_scaling, outputs=test_output2)
-
             test_output3 = gr.Textbox(label="Résultat Modèle", interactive=False)
             gr.Button("Tester Modèle").click(fn=test_model, outputs=test_output3)
 
         gr.Markdown("---")
 
-        # --- SECTION FORMULAIRE DE PREDICTION ---
+        # Formulaire de prédiction
         gr.Markdown("## Saisir les informations de l’employé")
 
         with gr.Row():
             age = gr.Number(label="Âge", minimum=18, maximum=60, step=1)
             genre = gr.Radio(choices=["M", "F"], label="Genre")
-            revenu = gr.Number(label="Revenu mensuel (€)", minimum=1000, maximum=20000)
+            revenu = gr.Number(label="Revenu mensuel (€)", minimum=1000, maximum=20000, step=100)
 
         statut_marital = gr.Dropdown(["Celibataire", "Marie", "Divorce"], label="Statut marital")
         departement = gr.Dropdown(["Commercial", "Consulting", "RessourcesHumaines"], label="Département")
@@ -167,7 +138,9 @@ def build_interface():
         note_evaluation_actuelle = gr.Slider(3, 4, step=1, label="Évaluation actuelle")
 
         heure_supplementaires = gr.Radio(["Oui", "Non"], label="Heures supplémentaires")
-        augmentation_salaire_precedente_pourcent = gr.Dropdown(choices=["0.11", "0.12", "0.13", "0.14", "0.15", "0.16", "0.17","0.18", "0.19", "0.20", "0.21", "0.22", "0.23", "0.24", "0.25"],label="Augmentation du salaire précédente (%)")
+        augmentation_salaire_precedente_pourcent = gr.Dropdown(choices=[
+            "0.11","0.12","0.13","0.14","0.15","0.16","0.17","0.18","0.19","0.20","0.21","0.22","0.23","0.24","0.25"
+        ], label="Augmentation du salaire précédente (%)")
         nombre_participation_pee = gr.Number(label="Participations PEE", minimum=0, maximum=3, step=1)
         nb_formations_suivies = gr.Number(label="Formations suivies", minimum=0, maximum=6, step=1)
         distance_domicile_travail = gr.Number(label="Distance domicile-travail (km)", minimum=1, maximum=29, step=1)
