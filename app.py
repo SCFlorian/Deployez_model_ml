@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import pandas as pd
 import joblib
-import gradio as gr
 
 # Import des modules internes
 from src.preprocessing import data_engineering
@@ -79,11 +78,3 @@ def predict_api(input_data: EmployeeInput):
 
     except Exception as e:
         return {"error": str(e)}
-
-
-# === Interface Gradio montée sur FastAPI ===
-app = gr.mount_gradio_app(
-    fastapi_app,
-    blocks=build_interface(),
-    path="/"
-)

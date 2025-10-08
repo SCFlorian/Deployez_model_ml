@@ -4,6 +4,9 @@ import joblib
 import requests
 import os
 
+# === URL de ton API (celle de ton Espace Hugging Face) ===
+API_URL = "https://floriansc-deployez-model-ml.hf.space/predict"
+
 # Fonctions de test
 def test_feature_engineering():
     """Test de la fonction de feature engineering seule."""
@@ -26,11 +29,6 @@ def test_model():
         return f"Endpoint 'Model' : Modèle et seuil ({threshold:.3f}) chargés avec succès."
     except Exception as e:
         return f"Endpoint 'Model' : Erreur — {e}"
-
-
-# URL de l’API FastAPI (espace Hugging Face)
-SPACE_URL = os.getenv("SPACE_URL", "").strip().replace("_", "-").lower().rstrip("/")
-API_URL = f"{SPACE_URL}/predict" if SPACE_URL else "http://localhost:7860/predict"
 
 
 # Fonction principale de prédiction
