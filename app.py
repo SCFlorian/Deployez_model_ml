@@ -78,3 +78,9 @@ def predict_api(input_data: EmployeeInput):
 
     except Exception as e:
         return {"error": str(e)}
+
+app = gr.mount_gradio_app(
+    fastapi_app,
+    blocks=build_interface(),
+    path="/"
+)
