@@ -87,7 +87,3 @@ app = gr.mount_gradio_app(
     blocks=build_interface(),
     path="/"   # Gradio à la racine, FastAPI sous /api
 )
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=7860)
