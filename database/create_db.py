@@ -14,11 +14,11 @@ DB_URL = os.getenv("DATABASE_URL")
 
 # === Fallback automatique pour Hugging Face ===
 if not DB_URL or "localhost" in DB_URL:
-    print("Aucun accès PostgreSQL détecté — utilisation de SQLite (Hugging Face).")
+    print("⚠️  Aucun accès PostgreSQL détecté — utilisation de SQLite (mode Hugging Face).")
     DB_URL = "sqlite:///./default.db"
 
 # === Connexion et session ===
-connect_args = {"check_same_thread": False} if "sqlite" in DB_URL else {}
+connect_args = {"check_same_thread": False} if DB_URL.startswith("sqlite") else {}
 engine = create_engine(DB_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
