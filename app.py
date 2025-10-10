@@ -104,7 +104,6 @@ def predict_api(input_data: EmployeeInput):
         )
         db.add(new_request)
         db.commit()
-        db.refresh(new_request)
 
         # Transformation et scaling
         donnees_saisie = pd.DataFrame([input_data.dict()])
@@ -119,7 +118,6 @@ def predict_api(input_data: EmployeeInput):
         )
         db.add(new_feature)
         db.commit()
-        db.refresh(new_feature)
 
         donnees_pret_reloaded = pd.read_json(new_feature.feature_data, orient="records")
 
@@ -136,7 +134,6 @@ def predict_api(input_data: EmployeeInput):
         )
         db.add(new_result)
         db.commit()
-        db.refresh(new_result)
 
         prediction_record = db.query(PredictionResultDB).filter_by(id=new_result.id).first()
 
