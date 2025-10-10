@@ -18,8 +18,6 @@ from database.create_db import (
     FeatureDB,
     RequestLogDB,
     ApiResponseDB,
-    Base,
-    engine
 )
 
 # === Schéma de validation Pydantic ===
@@ -59,7 +57,6 @@ app = FastAPI(
     description="API de prédiction du départ des employés avec journalisation complète et sécurité renforcée.",
     version="2.0.0"
 )
-
 
 # === Endpoint de santé ===
 @app.get("/health")
@@ -124,11 +121,13 @@ def predict_api(input_data: EmployeeInput):
         db.commit()
         db.refresh(new_feature)
 
-        # Prédiction via le modèle
-        result = predict(donnees_pret)
+        donnees_pret_reloaded = pd.read_json(new_feature.feature_data, orient="records")
+
+        # Prédiction via le modèle (à partir des données relues)
+        result = predict(donnees_pret_reloaded)
         message = "Risque de départ" if result["prediction"] == 1 else "Employé fidèle"
 
-        # Sauvegarde du résultat et journalisation de la réponse
+        # Sauvegarde + relecture du résultat
         new_result = PredictionResultDB(
             employee_input_id=new_input.id,
             prediction=result["prediction"],
@@ -139,23 +138,25 @@ def predict_api(input_data: EmployeeInput):
         db.commit()
         db.refresh(new_result)
 
+        prediction_record = db.query(PredictionResultDB).filter_by(id=new_result.id).first()
+
+        # Journalisation de la réponse
         new_response = ApiResponseDB(
             request_id=new_request.id,
-            prediction_id=new_result.id,
+            prediction_id=prediction_record.id,
             status_code=200,
-            message="Succès"
+            message=prediction_record.message
         )
         db.add(new_response)
         db.commit()
 
-        # 6️⃣ Clôture propre de la session
+        # Fermeture propre + retour utilisateur
         db.close()
 
-        # 7️⃣ Diffusion du résultat à l’utilisateur
         return {
-            "prediction": int(result["prediction"]),
-            "probability": float(result["probability"]),
-            "message": message
+            "prediction": int(prediction_record.prediction),
+            "probability": float(prediction_record.probability),
+            "message": prediction_record.message
         }
 
     except Exception as e:

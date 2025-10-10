@@ -4,9 +4,17 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+import os
+from dotenv import load_dotenv
 
 # === Connexion locale PostgreSQL ===
-DB_URL = "postgresql://florianschorer@localhost:5432/employee_turnover"
+
+load_dotenv()  # Charge les variables depuis .env
+DB_URL = os.getenv("DATABASE_URL")
+
+# Vérification utile (évite un crash silencieux si .env n’est pas trouvé)
+if not DB_URL:
+    raise ValueError("Variable DATABASE_URL introuvable. Vérifie ton fichier .env à la racine du projet.")
 
 # === Connexion et session ===
 engine = create_engine(DB_URL)
