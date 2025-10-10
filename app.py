@@ -20,6 +20,13 @@ from database.create_db import (
     ApiResponseDB
 )
 
+# === Création automatique de la base de données ===
+try:
+    Base.metadata.create_all(bind=engine)
+    print("Base PostgreSQL prête (tables créées ou déjà existantes).")
+except OperationalError as e:
+    print("Impossible de se connecter à la base de données :", e)
+
 # === Schéma de validation Pydantic ===
 class EmployeeInput(BaseModel):
     age: int
