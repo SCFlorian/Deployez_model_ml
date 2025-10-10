@@ -12,12 +12,14 @@ from dotenv import load_dotenv
 load_dotenv()  # Charge les variables depuis .env
 DB_URL = os.getenv("DATABASE_URL")
 
-# Vérification utile (évite un crash silencieux si .env n’est pas trouvé)
-if not DB_URL:
-    raise ValueError("Variable DATABASE_URL introuvable. Vérifie ton fichier .env à la racine du projet.")
+# === Fallback automatique pour Hugging Face ===
+if not DB_URL or "localhost" in DB_URL:
+    print("Aucun accès PostgreSQL détecté — utilisation de SQLite (Hugging Face).")
+    DB_URL = "sqlite:///./default.db"
 
 # === Connexion et session ===
-engine = create_engine(DB_URL)
+connect_args = {"check_same_thread": False} if "sqlite" in DB_URL else {}
+engine = create_engine(DB_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
@@ -116,11 +118,11 @@ class ApiResponseDB(Base):
     message = Column(String)
     timestamp = Column(DateTime, server_default=func.now())
 
-    # Relation
+    # Relations
     request = relationship("RequestLogDB", back_populates="responses")
 
 #  CRÉATION DES TABLES
 
 if __name__ == "__main__":
     Base.metadata.create_all(bind=engine)
-    print("✅ Base de données et tables créées avec succès.")
+    print("Base de données et tables créées avec succès.")
