@@ -17,7 +17,9 @@ from database.create_db import (
     PredictionResultDB,
     FeatureDB,
     RequestLogDB,
-    ApiResponseDB
+    ApiResponseDB,
+    Base,
+    engine
 )
 
 # === Création automatique de la base de données ===
