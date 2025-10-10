@@ -81,21 +81,21 @@ def health_check():
 def predict_api(input_data: EmployeeInput):
     """
     Étapes :
-    1. Enregistrement des données brutes
-    2. Transformation & scaling
-    3. Enregistrement des features transformées
-    4. Prédiction
-    5. Enregistrement du résultat et journalisation complète
-    6. Diffusion du résultat à l’utilisateur
+    1. Sauvegarde des données brutes dans la base
+    2. Transformation et scaling
+    3. Sauvegarde des features traitées
+    4. Prédiction à partir des données sauvegardées
+    5. Journalisation complète du résultat et de la réponse
     """
     db: Session = SessionLocal()
     try:
-        # Journaliser la requête et sauvegarder les données brutes
+        # Sauvegarde des données brutes saisies
         new_input = EmployeeInputDB(**input_data.dict())
         db.add(new_input)
         db.commit()
         db.refresh(new_input)
 
+        # Journalisation de la requête
         new_request = RequestLogDB(
             endpoint="/predict",
             employee_input_id=new_input.id,
@@ -104,13 +104,14 @@ def predict_api(input_data: EmployeeInput):
         )
         db.add(new_request)
         db.commit()
+        db.refresh(new_request)
 
         # Transformation et scaling
         donnees_saisie = pd.DataFrame([input_data.dict()])
         donnees_traitees = data_engineering(donnees_saisie)
         donnees_pret = data_scaling(donnees_traitees)
 
-        # Sauvegarde des données prêtes avant prédiction
+        # Sauvegarde des données prêtes dans la table "features"
         donnees_pret_json = donnees_pret.to_json(orient="records")
         new_feature = FeatureDB(
             employee_input_id=new_input.id,
@@ -118,43 +119,49 @@ def predict_api(input_data: EmployeeInput):
         )
         db.add(new_feature)
         db.commit()
+        db.refresh(new_feature)
 
+        # Relecture propre pour prédiction (on relit les données sauvegardées)
         donnees_pret_reloaded = pd.read_json(new_feature.feature_data, orient="records")
 
-        # Prédiction via le modèle (à partir des données relues)
+        # Prédiction à partir des données rechargées
         result = predict(donnees_pret_reloaded)
         message = "Risque de départ" if result["prediction"] == 1 else "Employé fidèle"
 
-        # Sauvegarde + relecture du résultat
+        # Sauvegarde du résultat
         new_result = PredictionResultDB(
             employee_input_id=new_input.id,
-            prediction=result["prediction"],
-            probability=result["probability"],
+            prediction=int(result["prediction"]),
+            probability=float(result["probability"]),
             message=message
         )
         db.add(new_result)
         db.commit()
-
-        prediction_record = db.query(PredictionResultDB).filter_by(id=new_result.id).first()
+        db.refresh(new_result)
 
         # Journalisation de la réponse
         new_response = ApiResponseDB(
             request_id=new_request.id,
-            prediction_id=prediction_record.id,
+            prediction_id=new_result.id,
             status_code=200,
-            message=prediction_record.message
+            message=message
         )
         db.add(new_response)
         db.commit()
+        db.refresh(new_response)
 
-        # Fermeture propre + retour utilisateur
+        # 7On prépare les données à renvoyer avant fermeture de la session
+        prediction_data = {
+            "prediction": new_result.prediction,
+            "probability": new_result.probability,
+            "message": message
+        }
+
+        # Fermeture propre de la session
         db.close()
 
-        return {
-            "prediction": int(prediction_record.prediction),
-            "probability": float(prediction_record.probability),
-            "message": prediction_record.message
-        }
+        # Envoi du résultat à l’utilisateur
+        return prediction_data
 
     except Exception as e:
         db.rollback()
