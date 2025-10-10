@@ -64,7 +64,18 @@ app = FastAPI(
 # === Endpoint de santé ===
 @app.get("/health")
 def health_check():
-    """Vérifie si l’API fonctionne correctement."""
+    """Vérifie si l’API fonctionne et journalise la requête."""
+    db = SessionLocal()
+
+    new_request = RequestLogDB(
+        endpoint="/health",
+        user_id="florian_user",
+        timestamp=datetime.utcnow()
+    )
+    db.add(new_request)
+    db.commit()
+    db.close()
+
     return {"status": "OK", "message": "API opérationnelle"}
 
 
