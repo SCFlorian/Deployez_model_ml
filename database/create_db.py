@@ -7,21 +7,30 @@ from sqlalchemy.orm import sessionmaker, relationship
 import os
 from dotenv import load_dotenv
 
-# === Connexion locale PostgreSQL ===
-
-load_dotenv()  # Charge les variables depuis .env
+# === Chargement des variables d'environnement ===
+load_dotenv()
 DB_URL = os.getenv("DATABASE_URL")
 
-# === Fallback automatique pour Hugging Face ===
-if not DB_URL or "localhost" in DB_URL:
-    print("⚠️  Aucun accès PostgreSQL détecté — utilisation de SQLite (mode Hugging Face).")
-    DB_URL = "sqlite:///./default.db"
+# === Détection automatique du contexte (local vs Hugging Face) ===
+if not DB_URL:
+    # Si aucune variable, on est probablement sur Hugging Face
+    print("Aucune base locale détectée — démarrage en mode 'sans base'.")
+    DB_URL = None
 
-# === Connexion et session ===
-connect_args = {"check_same_thread": False} if DB_URL.startswith("sqlite") else {}
-engine = create_engine(DB_URL, connect_args=connect_args)
-SessionLocal = sessionmaker(bind=engine)
-Base = declarative_base()
+# === Gestion des modes ===
+if DB_URL and "localhost" in DB_URL:
+    # Cas normal : PostgreSQL local
+    print("Connexion PostgreSQL locale détectée.")
+    engine = create_engine(DB_URL)
+    SessionLocal = sessionmaker(bind=engine)
+    Base = declarative_base()
+
+else:
+    # Cas Hugging Face (pas de base dispo)
+    print("Mode Hugging Face — les opérations base de données sont désactivées.")
+    engine = None
+    SessionLocal = None
+    Base = declarative_base()
 
 #  TABLE 1 : Données brutes (inputs du formulaire)
 
