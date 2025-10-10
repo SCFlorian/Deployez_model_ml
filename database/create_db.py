@@ -1,18 +1,23 @@
-from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, func
+from sqlalchemy import (
+    create_engine, Column, Integer, Float, String,
+    DateTime, Text, ForeignKey, func
+)
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 
 # === Connexion locale PostgreSQL ===
-# URL dans ma base de données
 DB_URL = "postgresql://florianschorer@localhost:5432/employee_turnover"
 
+# === Connexion et session ===
 engine = create_engine(DB_URL)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
-# === Table des entrées utilisateur ===
+#  TABLE 1 : Données brutes (inputs du formulaire)
+
 class EmployeeInputDB(Base):
     __tablename__ = "employee_inputs"
+
     id = Column(Integer, primary_key=True, index=True)
     age = Column(Integer)
     genre = Column(String)
@@ -43,17 +48,71 @@ class EmployeeInputDB(Base):
     annes_sous_responsable_actuel = Column(Integer)
     created_at = Column(DateTime, server_default=func.now())
 
-# === Table des prédictions ===
+    # Relations
+    features = relationship("FeatureDB", back_populates="employee")
+    predictions = relationship("PredictionResultDB", back_populates="employee")
+    requests = relationship("RequestLogDB", back_populates="employee")
+
+#  TABLE 2 : Données prêtes après preprocessing (features)
+
+class FeatureDB(Base):
+    __tablename__ = "features"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_input_id = Column(Integer, ForeignKey("employee_inputs.id"))
+    feature_data = Column(Text)  # Données encodées/scalées au format JSON
+    created_at = Column(DateTime, server_default=func.now())
+
+    # Relation
+    employee = relationship("EmployeeInputDB", back_populates="features")
+
+#  TABLE 3 : Résultats de prédiction
+
 class PredictionResultDB(Base):
     __tablename__ = "prediction_results"
+
     id = Column(Integer, primary_key=True, index=True)
-    employee_input_id = Column(Integer)
+    employee_input_id = Column(Integer, ForeignKey("employee_inputs.id"))
     prediction = Column(Integer)
     probability = Column(Float)
     message = Column(String)
     created_at = Column(DateTime, server_default=func.now())
 
-# === Création des tables ===
+    # Relation
+    employee = relationship("EmployeeInputDB", back_populates="predictions")
+
+#  TABLE 4 : Journalisation des requêtes API
+
+class RequestLogDB(Base):
+    __tablename__ = "requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    endpoint = Column(String)
+    employee_input_id = Column(Integer, ForeignKey("employee_inputs.id"))
+    user_id = Column(String, default="florian_user")
+    timestamp = Column(DateTime, server_default=func.now())
+
+    # Relations
+    employee = relationship("EmployeeInputDB", back_populates="requests")
+    responses = relationship("ApiResponseDB", back_populates="request")
+
+#  TABLE 5 : Journalisation des réponses API
+
+class ApiResponseDB(Base):
+    __tablename__ = "api_responses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    request_id = Column(Integer, ForeignKey("requests.id"))
+    prediction_id = Column(Integer, ForeignKey("prediction_results.id"))
+    status_code = Column(Integer)
+    message = Column(String)
+    timestamp = Column(DateTime, server_default=func.now())
+
+    # Relation
+    request = relationship("RequestLogDB", back_populates="responses")
+
+#  CRÉATION DES TABLES
+
 if __name__ == "__main__":
     Base.metadata.create_all(bind=engine)
-    print("Base de données et tables créées avec succès.")
+    print("✅ Base de données et tables créées avec succès.")

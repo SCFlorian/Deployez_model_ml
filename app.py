@@ -1,17 +1,26 @@
+APP avec SQL en plus
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 import pandas as pd
-import joblib
 import gradio as gr
 import uvicorn
+from sqlalchemy.orm import Session
+from datetime import datetime
 
-# Import des modules internes
+# === Import des modules internes ===
 from src.preprocessing import data_engineering
 from src.scaling import data_scaling
 from src.prediction import predict
 from src.interface import build_interface
-from sqlalchemy.orm import Session
-from database.create_db import SessionLocal, EmployeeInputDB, PredictionResultDB
+from database.create_db import (
+    SessionLocal,
+    EmployeeInputDB,
+    PredictionResultDB,
+    FeatureDB,
+    RequestLogDB,
+    ApiResponseDB
+)
 
 # === Schéma de validation Pydantic ===
 class EmployeeInput(BaseModel):
@@ -44,11 +53,11 @@ class EmployeeInput(BaseModel):
     annes_sous_responsable_actuel: int
 
 
-# === Création de l’app FastAPI ===
+# === Création de l’application FastAPI ===
 app = FastAPI(
     title="Employee Turnover Prediction API",
-    description="API de prédiction du départ des employés basée sur un modèle de Machine Learning.",
-    version="1.0.0"
+    description="API de prédiction du départ des employés avec journalisation complète et sécurité renforcée.",
+    version="2.0.0"
 )
 
 
@@ -59,44 +68,79 @@ def health_check():
     return {"status": "OK", "message": "API opérationnelle"}
 
 
-# === Endpoint de prédiction ===
+# === Endpoint principal de prédiction ===
 @app.post("/predict")
 def predict_api(input_data: EmployeeInput):
     """
-    Endpoint principal : exécute le pipeline complet
-    Feature engineering → Scaling → Prédiction
-    Sauvegarde le résultat de prédiction
+    Étapes :
+    1. Enregistrement des données brutes
+    2. Transformation & scaling
+    3. Enregistrement des features transformées
+    4. Prédiction
+    5. Enregistrement du résultat et journalisation complète
+    6. Diffusion du résultat à l’utilisateur
     """
+    db: Session = SessionLocal()
     try:
-        # Connexion à la BDD
-        db: Session = SessionLocal()
-
-        # Sauvegarde des entrées
+        # Journaliser la requête et sauvegarder les données brutes
         new_input = EmployeeInputDB(**input_data.dict())
         db.add(new_input)
         db.commit()
         db.refresh(new_input)
 
-        # Traitement ML
+        new_request = RequestLogDB(
+            endpoint="/predict",
+            employee_input_id=new_input.id,
+            user_id="florian_user",
+            timestamp=datetime.utcnow()
+        )
+        db.add(new_request)
+        db.commit()
+        db.refresh(new_request)
+
+        # Transformation et scaling
         donnees_saisie = pd.DataFrame([input_data.dict()])
         donnees_traitees = data_engineering(donnees_saisie)
         donnees_pret = data_scaling(donnees_traitees)
-        result = predict(donnees_pret)
 
+        # Sauvegarde des données prêtes avant prédiction
+        donnees_pret_json = donnees_pret.to_json(orient="records")
+        new_feature = FeatureDB(
+            employee_input_id=new_input.id,
+            feature_data=donnees_pret_json
+        )
+        db.add(new_feature)
+        db.commit()
+        db.refresh(new_feature)
+
+        # Prédiction via le modèle
+        result = predict(donnees_pret)
         message = "Risque de départ" if result["prediction"] == 1 else "Employé fidèle"
 
-        # Sauvegarde des résultats
+        # Sauvegarde du résultat et journalisation de la réponse
         new_result = PredictionResultDB(
             employee_input_id=new_input.id,
             prediction=result["prediction"],
             probability=result["probability"],
-            message=message,
+            message=message
         )
         db.add(new_result)
         db.commit()
+        db.refresh(new_result)
 
+        new_response = ApiResponseDB(
+            request_id=new_request.id,
+            prediction_id=new_result.id,
+            status_code=200,
+            message="Succès"
+        )
+        db.add(new_response)
+        db.commit()
+
+        # 6️⃣ Clôture propre de la session
         db.close()
 
+        # 7️⃣ Diffusion du résultat à l’utilisateur
         return {
             "prediction": int(result["prediction"]),
             "probability": float(result["probability"]),
@@ -104,14 +148,16 @@ def predict_api(input_data: EmployeeInput):
         }
 
     except Exception as e:
+        db.rollback()
+        db.close()
         return {"error": str(e)}
+
 
 # === Interface Gradio (UI) ===
 demo = build_interface()
-
-# === Montage de Gradio sur FastAPI ===
 gradio_app = gr.mount_gradio_app(app, demo, path="/")
 
-# === Lancement pour Docker ===
+
+# === Lancement local ===
 if __name__ == "__main__":
     uvicorn.run("app:gradio_app", host="0.0.0.0", port=7860)
