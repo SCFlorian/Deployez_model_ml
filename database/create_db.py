@@ -7,23 +7,23 @@ from sqlalchemy.orm import sessionmaker, relationship
 import os
 from dotenv import load_dotenv
 
-# === Chargement des variables d'environnement ===
+# === Chargement du .env ===
 load_dotenv()
+
+# Essaie de récupérer la base locale
 DB_URL = os.getenv("DATABASE_URL")
 
-# === Détection automatique du contexte (local vs Hugging Face) ===
+# Si pas de base locale (comme sur Hugging Face) → on passe en SQLite
 if not DB_URL:
-    # Si aucune variable, on est probablement sur Hugging Face
-    print("Aucune base locale détectée — démarrage en mode 'sans base'.")
-    DB_URL = None
+    print("Pas de base PostgreSQL détectée — utilisation de SQLite par défaut (Hugging Face).")
+    DB_URL = "sqlite:///./hf_temp.db"
 
-# === Gestion des modes ===
-if DB_URL and "localhost" in DB_URL:
-    # Cas normal : PostgreSQL local
-    print("Connexion PostgreSQL locale détectée.")
-    engine = create_engine(DB_URL)
-    SessionLocal = sessionmaker(bind=engine)
-    Base = declarative_base()
+# === Connexion ===
+connect_args = {"check_same_thread": False} if "sqlite" in DB_URL else {}
+engine = create_engine(DB_URL, connect_args=connect_args)
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
+
 
 else:
     # Cas Hugging Face (pas de base dispo)
