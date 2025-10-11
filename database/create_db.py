@@ -17,7 +17,7 @@ DB_URL = os.getenv("DATABASE_URL")
 # === Sélection du mode ===
 if IS_HF:
     print("Mode Hugging Face détecté — utilisation de SQLite (temporaire).")
-    DB_URL = "sqlite:///./hf_temp.db"
+    DB_URL = "sqlite:////home/user/app/hf_temp.db"
 elif DB_URL:
     print("Mode local — connexion PostgreSQL utilisée.")
 else:
