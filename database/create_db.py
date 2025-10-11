@@ -10,27 +10,26 @@ from dotenv import load_dotenv
 # === Chargement du .env ===
 load_dotenv()
 
-# Essaie de récupérer la base locale
+# === Récupération de la variable de connexion ===
 DB_URL = os.getenv("DATABASE_URL")
+IS_HF = os.getenv("SPACE_ID") is not None  # Hugging Face définit cette variable automatiquement
 
-# Si pas de base locale (comme sur Hugging Face) → on passe en SQLite
-if not DB_URL:
-    print("Pas de base PostgreSQL détectée — utilisation de SQLite par défaut (Hugging Face).")
+# === Choix du mode selon l'environnement ===
+if IS_HF:
+    # On est sur Hugging Face → utiliser une base SQLite temporaire
+    print("Mode Hugging Face détecté — utilisation de SQLite (mode démo).")
     DB_URL = "sqlite:///./hf_temp.db"
+else:
+    # En local → utiliser PostgreSQL
+    if not DB_URL:
+        raise ValueError("DATABASE_URL introuvable. Vérifie ton fichier .env à la racine du projet.")
+    print("Mode local — connexion PostgreSQL utilisée.")
 
-# === Connexion ===
+# === Connexion et configuration de la session ===
 connect_args = {"check_same_thread": False} if "sqlite" in DB_URL else {}
 engine = create_engine(DB_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
-
-
-else:
-    # Cas Hugging Face (pas de base dispo)
-    print("Mode Hugging Face — les opérations base de données sont désactivées.")
-    engine = None
-    SessionLocal = None
-    Base = declarative_base()
 
 #  TABLE 1 : Données brutes (inputs du formulaire)
 
