@@ -7,23 +7,31 @@ from sqlalchemy.orm import sessionmaker, relationship
 import os
 from dotenv import load_dotenv
 
-# === Chargement du .env ===
 load_dotenv()
 
-# === Détection Hugging Face ===
-IS_HF = os.getenv("SPACE_ID") is not None  # Hugging Face définit cette variable automatiquement
+IS_HF = os.getenv("SPACE_ID") is not None
 DB_URL = os.getenv("DATABASE_URL")
 
-# === Sélection du mode ===
 if IS_HF:
     print("Mode Hugging Face détecté — utilisation de SQLite (temporaire).")
-    DB_URL = "sqlite:////home/user/app/hf_temp.db"
+
+    # Chemin vers un répertoire sûr et en écriture
+    DB_DIR = "/home/user/app"
+    DB_PATH = os.path.join(DB_DIR, "hf_temp.db")
+
+    # Crée le dossier et le fichier si nécessaire
+    os.makedirs(DB_DIR, exist_ok=True)
+    if not os.path.exists(DB_PATH):
+        open(DB_PATH, "a").close()
+
+    DB_URL = f"sqlite:///{DB_PATH}"
+
 elif DB_URL:
     print("Mode local — connexion PostgreSQL utilisée.")
 else:
-    raise ValueError("DATABASE_URL introuvable dans le fichier .env (nécessaire en local).")
+    raise ValueError("DATABASE_URL introuvable dans .env (nécessaire en local).")
 
-# === Configuration SQLAlchemy ===
+# Connexion SQLAlchemy
 connect_args = {"check_same_thread": False} if DB_URL.startswith("sqlite") else {}
 engine = create_engine(DB_URL, connect_args=connect_args, echo=False)
 SessionLocal = sessionmaker(bind=engine)
