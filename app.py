@@ -20,6 +20,14 @@ from database.create_db import (
     ApiResponseDB,
 )
 
+# --- Initialisation de la base ---
+from database.create_db import Base, engine
+
+print("Initialisation des tables si absentes...")
+Base.metadata.create_all(bind=engine)
+print("Tables prêtes.")
+
+
 # === Schéma de validation Pydantic ===
 class EmployeeInput(BaseModel):
     age: int
