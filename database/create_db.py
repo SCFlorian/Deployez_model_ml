@@ -15,12 +15,11 @@ DB_URL = os.getenv("DATABASE_URL")
 if IS_HF:
     print("Mode Hugging Face détecté — utilisation de SQLite (temporaire).")
 
-    # Chemin vers un répertoire sûr et en écriture
-    DB_DIR = "/home/user/app"
+    # Utiliser /tmp (seul dossier en écriture sur Hugging Face)
+    DB_DIR = "/tmp"
     DB_PATH = os.path.join(DB_DIR, "hf_temp.db")
 
-    # Crée le dossier et le fichier si nécessaire
-    os.makedirs(DB_DIR, exist_ok=True)
+    # Crée le fichier si nécessaire
     if not os.path.exists(DB_PATH):
         open(DB_PATH, "a").close()
 
@@ -31,7 +30,7 @@ elif DB_URL:
 else:
     raise ValueError("DATABASE_URL introuvable dans .env (nécessaire en local).")
 
-# Connexion SQLAlchemy
+# === Connexion SQLAlchemy ===
 connect_args = {"check_same_thread": False} if DB_URL.startswith("sqlite") else {}
 engine = create_engine(DB_URL, connect_args=connect_args, echo=False)
 SessionLocal = sessionmaker(bind=engine)
