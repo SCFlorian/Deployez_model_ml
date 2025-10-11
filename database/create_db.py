@@ -10,20 +10,25 @@ from dotenv import load_dotenv
 # === Chargement du .env ===
 load_dotenv()
 
-# === Récupération de la variable de connexion ===
-DB_URL = os.getenv("DATABASE_URL")
+# === Détection Hugging Face ===
 IS_HF = os.getenv("SPACE_ID") is not None  # Hugging Face définit cette variable automatiquement
+DB_URL = os.getenv("DATABASE_URL")
 
-# === Choix du mode selon l'environnement ===
+# === Sélection du mode ===
 if IS_HF:
-    # On est sur Hugging Face → utiliser une base SQLite temporaire
-    print("Mode Hugging Face détecté — utilisation de SQLite (mode démo).")
+    print("Mode Hugging Face détecté — utilisation de SQLite (temporaire).")
     DB_URL = "sqlite:///./hf_temp.db"
-else:
-    # En local → utiliser PostgreSQL
-    if not DB_URL:
-        raise ValueError("DATABASE_URL introuvable. Vérifie ton fichier .env à la racine du projet.")
+elif DB_URL:
     print("Mode local — connexion PostgreSQL utilisée.")
+else:
+    raise ValueError("DATABASE_URL introuvable dans le fichier .env (nécessaire en local).")
+
+# === Configuration SQLAlchemy ===
+connect_args = {"check_same_thread": False} if DB_URL.startswith("sqlite") else {}
+engine = create_engine(DB_URL, connect_args=connect_args, echo=False)
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
+
 
 # === Connexion et configuration de la session ===
 connect_args = {"check_same_thread": False} if "sqlite" in DB_URL else {}
